@@ -8,37 +8,37 @@
 """
 
 # 待识别照片存储位置:
-PHOTO_PATH = 'photo/'
+PHOTO_PATH = 'catch_result/photo/'
 
 # 最新拍摄的RGB图
-COLOR_PATH = 'photo/color.png'
+COLOR_PATH = 'catch_result/photo/color.png'
 
 # 最新拍摄的深度图
-DEPTH_PATH = 'photo/depth.png'
+DEPTH_PATH = 'catch_result/photo/depth.png'
 
 # 最新由深度估计产生的深度图
-PREDICT_DEPTH_PATH = 'photo/predict_depth.png'
+PREDICT_DEPTH_PATH = 'catch_result/photo/predict_depth.png'
 
 # 最新拍摄的RGB图
-CATCH_IMG_PATH = 'photo/catch_point.png'
+CATCH_IMG_PATH = 'catch_result/photo/catch_point.png'
 
 # masks图片位置
-MASKS_COLOR_PATH = 'photo/masks/'
+MASKS_COLOR_PATH = 'catch_result/photo/masks/'
 
 # 存储机械臂坐标系下的点云的txt
-BASE_CLOUD_PATH = 'txt/base_cloud.ply'
+BASE_CLOUD_PATH = 'catch_result/txt/base_cloud.ply'
 
 # 抓取目标平面的点云
-TARGET_POINT_CLOUD_PATH = 'txt/target_point_cloud.txt'
+TARGET_POINT_CLOUD_PATH = 'catch_result/txt/target_point_cloud.txt'
 
 # 给机械臂的抓取数据
-CATCH_POSE_PATH = 'txt/catch_pose.txt'
+CATCH_POSE_PATH = 'catch_result/txt/catch_pose.txt'
 
 # 深度估计点云
-PREDICT_DEPTH_POINT_CLOUD_PATH = 'txt/predict_depth_point_cloud.txt'
+PREDICT_DEPTH_POINT_CLOUD_PATH = 'catch_result/txt/predict_depth_point_cloud.txt'
 
 # 深度相机点云文件存储
-NPY_PATH = 'txt/point_cloud.npy'
+NPY_PATH = 'catch_result/txt/point_cloud.npy'
 
 # 吸盘长度,单位mm
 SUCKER_LENGTH = 208
@@ -55,9 +55,9 @@ CAMERA_INTRINSIC = [[609.919868760916, 0, 327.571937094492],
                     [0, 0, 1]]
 
 # 相机坐标系到机械臂坐标系的转换矩阵
-CAMERA2BASE = [[0.02743068, -0.99945284, 0.01848209, -32.75992004],
-               [-0.99937979, -0.02701088, 0.02259293, 613.51728245],
-               [-0.02208135, -0.01909037, -0.9995739, 666.81700713],
+CAMERA2BASE = [[0.99932303, 0.00383785, 0.03658904, 136.86641864],
+               [0.00553989, -0.99890151, -0.0465304, -472.62827245],
+               [0.03637027, 0.0467016, -0.99824654, 650.02743144],
                [0., 0., 0., 1.]]
 
 # 深度估计校准值
@@ -87,7 +87,7 @@ data = {'photo_flag': False, 'have_item': True}
 
 # 存储实验结果
 # 存储数据结果的文件夹
-test_path = 'history/'
+test_path = 'catch_result/history/'
 # 实验时间
 test_time = ''
 # 实验次数
@@ -100,25 +100,25 @@ real_back_angle = 0
 normal_vector1 = 0
 normal_vector2 = 0
 normal_vector3 = 0
-
 put_items = {
     # [[乐芙球1号面初始堆叠位置],乐芙球平放高度单位m,放置时的下降高度，乐芙球放置个数,面号]
-    # "LFQ-1": [[-0.085, 0.550, -0.089, 3.142, 0, 0], 0.05, 0, 0, 1],
-    # "LFQ-2": [[-0.353, 0.550, 0.120, 3.142, 0, 0], 0.055, 145, 0, 2],
-    # "LFQ-3": [[-0.549, 0.550, 0.200, 3.142, 0, 0], 0.055, 177, 0, 3],
-    # "nabati-1": [[-0.082, 0.350, -0.100, 3.142, 0, 0], 0.038, 0, 0, 1],
-    # "nabati-2": [[-0.353, 0.350, 0.053, 3.142, 0, 0], 0.038, 97, 0, 2],
-    # "nabati-3": [[-0.549, 0.350, 0.275, 3.142, 0, 0], 0.038, 215, 0, 3],
-    "LFQ-1": [[0.474, -0.277, -0.092, 3.142, 0, 0], 0.05, 0, 0, 1],
-    "LFQ-2": [[0.474, -0.442, 0.104, 3.142, 0, 0], 0.055, 136, 0, 2],
-    "LFQ-3": [[-0.549, 0.550, 0.200, 3.142, 0, 0], 0.055, 0, 0, 3],
-    "lefuqiu1": [[0.474, -0.277, -0.092, 3.142, 0, 0], 0.05, 0, 0, 1],
-    "lefuqiu2": [[0.474, -0.442, 0.104, 3.142, 0, 0], 0.055, 136, 0, 2],
-    "lefuqiu3": [[-0.549, 0.550, 0.200, 3.142, 0, 0], 0.055, 0, 0, 3],
-    "nabati-1": [[0.504, 0.206, -0.107, 3.142, 0, 0], 0.038, 0, 0, 1],
-    "nabati-2": [[0.476, -0.033, 0.060, 3.142, 0, 0], 0.038, 117, 0, 2],
-    "nabati-3": [[-0.549, 0.350, 0.275, 3.142, 0, 0], 0.038, 0, 0, 3],
+    "LFQ-1": [[0.568, -0.019, -0.080, 3.142, 0, 0], 0.05, 0, 0, 1],
+    "LFQ-2": [[0.616, 0.267, -0.011, 3.142, 0, 0], 0.055, 145, 0, 2],
+    "LFQ-3": [[0.390, 0.256, 0.225, 3.142, 0, 0], 0.055, 177, 0, 3],
+    "nabati-1": [[0.407, -0.005, -0.094, 3.142, 0, 0], 0.038, 0, 0, 1],
+    "nabati-2": [[0.603, 0.466, -0.040, 3.142, 0, 0], 0.038, 97, 0, 2],
+    "nabati-3": [[0.423, 0.463, 0.076, 3.142, 0, 0], 0.038, 215, 0, 3],
+    "pie-1": [[0.256, 0.010, -0.078, 3.142, 0, 0], 0.055, 0, 0, 1],
+    "pie-2": [[0.254, 0.269, -0.041, 3.142, 0, 0], 0.055, 136, 0, 2],
+    "pie-3": [[0.266, 0.453, -0.031, 3.142, 0, 0], 0.055, 0, 0, 3],
+    # "LFQ-1": [[0.474, -0.277, -0.092, 3.142, 0, 0], 0.05, 0, 0, 1],
+    # "LFQ-2": [[0.474, -0.442, 0.104, 3.142, 0, 0], 0.055, 136, 0, 2],
+    # "LFQ-3": [[-0.549, 0.550, 0.200, 3.142, 0, 0], 0.055, 0, 0, 3],
+    # "nabati-1": [[0.504, 0.206, -0.107, 3.142, 0, 0], 0.038, 0, 0, 1],
+    # "nabati-2": [[0.476, -0.033, 0.060, 3.142, 0, 0], 0.038, 117, 0, 2],
+    # "nabati-3": [[-0.549, 0.350, 0.275, 3.142, 0, 0], 0.038, 0, 0, 3],
 }
+
 # 乐芙球1号面初始堆叠位置
 LFQ_1_HOME = [-0.08485, 0.48697, -0.140, 3.142, 0, 0]
 # 乐芙球平放高度,单位m

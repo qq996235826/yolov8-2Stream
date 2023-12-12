@@ -25,7 +25,8 @@ from .head import Classify, Detect, Pose, RTDETRDecoder, Segment
 from .transformer import (AIFI, MLP, DeformableTransformerDecoder, DeformableTransformerDecoderLayer, LayerNorm2d,
                           MLPBlock, MSDeformAttn, TransformerBlock, TransformerEncoderLayer, TransformerLayer)
 from .two_stream import (iAFF, Add, Add2, GPT)
-from .rgb_depth_fusion import (ResidualExciteFusion, SqueezeAndExcitation, SqueezeAndExciteFusionAdd, ExciteFusionAdd, SelfAttentionFusion, ResidualAttentionFusion)
+from .rgb_depth_fusion import (ResidualExciteFusion, SqueezeAndExcitation, SqueezeAndExciteFusionAdd, ExciteFusionAdd,
+                               SelfAttentionFusion, ResidualAttentionFusion, CrossModalMultiHeadAttention)
 
 
 __all__ = ('Conv', 'Conv2', 'LightConv', 'RepConv', 'DWConv', 'DWConvTranspose2d', 'ConvTranspose', 'Focus',
@@ -34,4 +35,5 @@ __all__ = ('Conv', 'Conv2', 'LightConv', 'RepConv', 'DWConv', 'DWConvTranspose2d
            'C2f', 'C3x', 'C3TR', 'C3Ghost', 'GhostBottleneck', 'Bottleneck', 'BottleneckCSP', 'Proto', 'Detect',
            'Segment', 'Pose', 'Classify', 'TransformerEncoderLayer', 'RepC3', 'RTDETRDecoder', 'AIFI',
            'DeformableTransformerDecoder', 'DeformableTransformerDecoderLayer', 'MSDeformAttn', 'MLP', 'iAFF', 'Add', 'Add2', 'GPT',
-           'ResidualExciteFusion', 'SqueezeAndExcitation', 'SqueezeAndExciteFusionAdd', 'ExciteFusionAdd', 'SelfAttentionFusion', 'ResidualAttentionFusion')
+           'ResidualExciteFusion', 'SqueezeAndExcitation', 'SqueezeAndExciteFusionAdd', 'ExciteFusionAdd', 'SelfAttentionFusion', 'ResidualAttentionFusion'
+           ,'CrossModalMultiHeadAttention')

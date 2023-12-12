@@ -10,11 +10,11 @@ import os
 import numpy as np
 import cv2 as cv
 import math
-import matrix_util
+from catch import matrix_util
 import open3d as o3d
-import config
+from catch import config
 import pyransac3d as pyrsc
-import yolo_item
+from catch import yolo_item
 
 
 # 获得法向量
@@ -120,24 +120,6 @@ def pixel_to_world2(depth_path, x, y, camera2base, camera_matrix):
     # [x,y,z]
     return base[0:3].getA().tolist(), d
 
-
-# 获得在机械臂坐标系下的全部点云
-@cuda.jit
-def get_base_point_cloud_by_cuda(point_cloud, camera2base):
-    tx = cuda.blockIdx.x * cuda.blockDim.x + cuda.threadIdx.x
-    ty = cuda.blockIdx.y * cuda.blockDim.y + cuda.threadIdx.y
-    if tx <= 640 and ty <= 480:
-        for i in range(3):
-            point = point_cloud[ty][tx]
-            pixel = [[point[0]][point[1]][point[2]]]
-            normalized_point = np.vstack((pixel, 1))
-            # 坐标系变换矩阵
-            camera2base = np.matrix(camera2base)
-            base = np.dot(camera2base, normalized_point)
-            base = np.asarray(base)
-            base = base[:3, 0].flatten()
-            base = np.append(base, point[3:6])
-            point_cloud[ty][tx] = base
 
 
 def get_base_cloud_by_numba(point_cloud, camera2base):
@@ -532,7 +514,7 @@ def get_catch_point(results):
     print('***********************************************')
     print("目标点：")
     item.print_catch_info()
-    catch_img = cv.imread("photo/color.png")
+    catch_img = cv.imread(config.PHOTO_PATH+"color.png")
     catch_img = cv.circle(catch_img, (int(item.center_point[0]), int(item.center_point[1])), 10, (0, 0, 0), -1)
     # 保存抓取点图
     cv.imwrite(config.CATCH_IMG_PATH, catch_img)

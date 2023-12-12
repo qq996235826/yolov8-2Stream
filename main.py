@@ -8,7 +8,6 @@ from catch import opencv_camera
 from catch import robotcontrol
 from queue import Queue
 
-
 if __name__ == '__main__':
     # 初始化机械臂控制类
     rob = robotcontrol.RobotControl()
@@ -28,14 +27,14 @@ if __name__ == '__main__':
     os.makedirs(config.final_path)
 
     # 创建队列
-    q = Queue(maxsize=1)
+    q = Queue(maxsize=2)
     # 创建相机线程
     opencv_cam = opencv_camera.Camera(q)
     # 线程开始运行
     opencv_cam.start()
 
     # 加载模型
-    model = YOLO("weight/4k9类原版200e0961.pt")
+    model = YOLO("weight/best.pt")
 
     # 拍照操作
     config.data['photo_flag'] = True
@@ -44,11 +43,11 @@ if __name__ == '__main__':
         # 如果拍照完成
         if q.full():
             # 预测
-            results = model(q.get())
+            results = model([q.get(), q.get()])
             # 保存结果图
             res_plotted = results[0].plot()
             # 保存至photo文件夹下
-            cv.imwrite("photo/result.png", res_plotted)
+            cv.imwrite("catch_result/photo/result.png", res_plotted)
             # 保存至历史
             cv.imwrite(config.final_path + "result.png", res_plotted)
             # 对照片进行处理并获得位姿信息

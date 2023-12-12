@@ -1,6 +1,6 @@
 import numpy as np
-import matrix_util
-import config
+from catch import matrix_util
+from catch import config
 import math
 import rtde_control
 import rtde_receive
@@ -88,8 +88,7 @@ class RobotControl:
     def reset(self, tool_vel=0.8, tool_acc=0.5):
         """机器臂复位"""
         self.rtde_c.moveJ(
-            # q=[1.5707963705062866, -1.570796314870016, -1.570796314870016, -1.570796314870016, 1.5707963705062866, 0.0],
-            q=[0.6981316888888889, -1.570796314870016, -1.570796314870016, -1.570796314870016, 1.5707963705062866, 0.0],
+            q=[0.0, -1.570796314870016, -1.570796314870016, -1.570796314870016, 1.5707963705062866, 0.0],
             speed=tool_vel, acceleration=tool_acc)
 
     def moveJ_Angle(self, angles, tool_vel=0.8, tool_acc=0.5):
@@ -131,8 +130,8 @@ class RobotControl:
                 self.move_down(put_item[2])
                 # 吸盘放气
                 self.open_sucker()
-                # Y轴减少
-                put_item[0][1] = put_item[0][1] - put_item[1]
+                # X轴减少
+                put_item[0][0] = put_item[0][0] - put_item[1]
                 # 该面抓取次数+1
                 put_item[3] += 1
                 # 回到默认位置

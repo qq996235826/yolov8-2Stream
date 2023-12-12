@@ -63,7 +63,7 @@ class DetectionValidator(BaseValidator):
 
     def init_metrics(self, model):
         """Initialize evaluation metrics for YOLO."""
-        val = self.data.get(self.args.split, '')  # validation path
+        val = self.data.get(self.args.split[0], '')  # validation path
         self.is_coco = isinstance(val, str) and 'coco' in val and val.endswith(f'{os.sep}val2017.txt')  # is COCO
         self.class_map = converter.coco80_to_coco91_class() if self.is_coco else list(range(1000))
         self.args.save_json |= self.is_coco and not self.training  # run on final val if training COCO
@@ -73,8 +73,8 @@ class DetectionValidator(BaseValidator):
         self.metrics.plot = self.args.plots
         self.confusion_matrix = ConfusionMatrix(nc=self.nc, conf=self.args.conf)
         self.seen = 0
-        self.jdict = []
         self.stats = []
+        self.jdict = []
 
     def get_desc(self):
         """Return a formatted string summarizing class metrics of YOLO model."""
@@ -185,7 +185,7 @@ class DetectionValidator(BaseValidator):
         iou = box_iou(labels[:, 1:], detections[:, :4])
         return self.match_predictions(detections[:, 5], labels[:, 0], iou)
 
-    def build_dataset(self, img_path, mode='val', batch=None):
+    def build_dataset(self, img_path_rgb, img_path_depth, mode='val', batch=None):
         """
         Build YOLO Dataset.
 
@@ -194,16 +194,16 @@ class DetectionValidator(BaseValidator):
             mode (str): `train` mode or `val` mode, users are able to customize different augmentations for each mode.
             batch (int, optional): Size of batches, this is for `rect`. Defaults to None.
         """
-        return build_yolo_dataset(self.args, img_path, batch, self.data, mode=mode, stride=self.stride)
+        return build_yolo_dataset(self.args, img_path_rgb, img_path_depth, batch, self.data, mode=mode, stride=self.stride)
 
-    def get_dataloader(self, dataset_path, batch_size):
+    def get_dataloader(self, img_path_rgb, img_path_depth, batch_size):
         """Construct and return dataloader."""
-        dataset = self.build_dataset(dataset_path, batch=batch_size, mode='val')
+        dataset = self.build_dataset(img_path_rgb, img_path_depth, batch=batch_size, mode='val')
         return build_dataloader(dataset, batch_size, self.args.workers, shuffle=False, rank=-1)  # return dataloader
 
     def plot_val_samples(self, batch, ni):
         """Plot validation image samples."""
-        plot_images(batch['img'],
+        plot_images(batch['img_rgb'],
                     batch['batch_idx'],
                     batch['cls'].squeeze(-1),
                     batch['bboxes'],

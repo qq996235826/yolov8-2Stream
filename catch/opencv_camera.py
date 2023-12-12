@@ -8,10 +8,11 @@
 """
 import threading
 import time
-import config
+from catch import config
 import pyrealsense2 as rs
 import numpy as np
 import cv2
+import matplotlib.pyplot as plt
 
 
 class Camera(threading.Thread):
@@ -41,6 +42,24 @@ class Camera(threading.Thread):
         # 点云处理工具
         self.pc = rs.pointcloud()
 
+    def depth_rendered(self, depth):
+        index = (depth < 580)
+        depth[index] = 580
+        index = (depth > 770)
+        depth[index] = 770
+        # 使用Matplotlib显示深度图像，以下设置可以将白边去除
+        w = 640
+        h = 480
+        dpi = 96
+        fig = plt.figure(figsize=(w / dpi, h / dpi), dpi=dpi)
+        axes = fig.add_axes([0, 0, 1, 1])
+        axes.set_axis_off()
+        # 选择颜色方案进行着色
+        axes.imshow(depth, cmap='viridis')
+        # 保存图片
+        plt.savefig(config.PHOTO_PATH+'depth_viridis.png', bbox_inches='tight', pad_inches=0)
+        plt.close()
+
     def save_photo(self, color, depth):
         # 保存图片
         # 保存历史照片,使用时间命名
@@ -53,8 +72,11 @@ class Camera(threading.Thread):
         cv2.imwrite(config.final_path + name + "-color.png", color)
         # 保存历史深度图片
         cv2.imwrite(config.final_path + name + "-depth.png", depth)
+
+        self.depth_rendered(depth)
         # 图片进入队列
         self.queue.put(config.PHOTO_PATH + 'color.png')
+        self.queue.put(config.PHOTO_PATH + 'depth_viridis.png')
 
     # 负责对照片进行处理
     def take_photo(self, color_frame, color_image):
@@ -72,7 +94,7 @@ class Camera(threading.Thread):
             filled_depth = self.temporal.process(filled_depth)
             # filled_depth = self.hole_filling.process(filled_depth)
         filtered_depth_image = np.asanyarray(filled_depth.get_data())
-        temp_filtered=filled_depth
+        temp_filtered = filled_depth
         # 保存图片
         self.save_photo(color_image, filtered_depth_image)
         if config.MODEL == 0:
@@ -123,16 +145,16 @@ class Camera(threading.Thread):
         pipeline_profile = camera_config.resolve(pipeline_wrapper)
         device = pipeline_profile.get_device()
         # 开始红外射线辅助
-        depth_sensor = device.first_depth_sensor()
-        if depth_sensor.supports(rs.option.emitter_enabled):
-            depth_sensor.set_option(rs.option.emitter_enabled, 0)
+        # depth_sensor = device.first_depth_sensor()
+        # if depth_sensor.supports(rs.option.emitter_enabled):
+        #     depth_sensor.set_option(rs.option.emitter_enabled, 0)
         # 设置为High Accuracy模式,高精度模式
-        preset_range = depth_sensor.get_option_range(rs.option.visual_preset)
-        for i in range(int(preset_range.max)):
-            visulpreset = depth_sensor.get_option_value_description(rs.option.visual_preset, i)
-            if visulpreset == "High Accuracy":
-                depth_sensor.set_option(rs.option.visual_preset, i)
-                break
+        # preset_range = depth_sensor.get_option_range(rs.option.visual_preset)
+        # for i in range(int(preset_range.max)):
+        #     visulpreset = depth_sensor.get_option_value_description(rs.option.visual_preset, i)
+        #     if visulpreset == "High Accuracy":
+        #         depth_sensor.set_option(rs.option.visual_preset, i)
+        #         break
         # 创建对齐对象（深度对齐颜色）
         align = rs.align(rs.stream.color)
         found_rgb = False

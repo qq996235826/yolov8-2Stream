@@ -21,8 +21,7 @@ __pycache__/
 .Python
 .idea/
 datasets/
-history/
-photo/
+catch_result/
 runs/
 txt/
 weight/

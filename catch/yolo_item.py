@@ -10,7 +10,7 @@ import math
 
 import numpy as np
 
-import config
+from catch import config
 
 
 # 从YOLO获得所有识别面的信息

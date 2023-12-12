@@ -12,7 +12,8 @@ from ultralytics.nn.modules import (AIFI, C1, C2, C3, C3TR, SPP, SPPF, Bottlenec
                                     Focus, GhostBottleneck, GhostConv, HGBlock, HGStem, Pose, RepC3, RepConv,
                                     RTDETRDecoder, Segment, Add, Add2, iAFF, GPT, ResidualExciteFusion,
                                     SqueezeAndExciteFusionAdd,
-                                    ResidualAttentionFusion)
+                                    ResidualAttentionFusion,
+                                    CrossModalMultiHeadAttention)
 from ultralytics.nn.modules.cascaded_rgbd.ResNet_models_sep import Mutual_info_reg as MI
 from ultralytics.utils import DEFAULT_CFG_DICT, DEFAULT_CFG_KEYS, LOGGER, colorstr, emojis, yaml_load
 from ultralytics.utils.checks import check_requirements, check_suffix, check_yaml
@@ -768,6 +769,8 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
         elif m in (ResidualExciteFusion, SqueezeAndExciteFusionAdd):
             c2 = ch[f[0]]
             args = [c2]
+        elif m is CrossModalMultiHeadAttention:
+            args = [ch[f[0]], *args]
 
         elif m is nn.BatchNorm2d:
             args = [ch[f]]

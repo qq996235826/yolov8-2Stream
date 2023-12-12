@@ -147,7 +147,8 @@ class BaseValidator:
             if not pt:
                 self.args.rect = False
             self.stride = model.stride  # used in get_dataloader() for padding
-            self.dataloader = self.dataloader or self.get_dataloader(self.data.get(self.args.split), self.args.batch)
+            self.dataloader = self.dataloader or self.get_dataloader(self.data.get(self.args.split[0]),
+                                                                     self.data.get(self.args.split[1]), self.args.batch)
 
             model.eval()
             model.warmup(imgsz=(1 if pt else self.args.batch, 3, imgsz, imgsz))  # warmup
@@ -166,7 +167,7 @@ class BaseValidator:
 
             # Inference
             with dt[1]:
-                preds = model([batch['img_rgb'], batch['img_depth']], augment=augment)
+                preds = model(batch['img_rgb'], batch['img_depth'], augment=augment)
 
             # Loss
             with dt[2]:
@@ -255,11 +256,11 @@ class BaseValidator:
         for callback in self.callbacks.get(event, []):
             callback(self)
 
-    def get_dataloader(self, dataset_path, batch_size):
+    def get_dataloader(self, img_path_rgb, img_path_depth, batch_size):
         """Get data loader from dataset path and batch size."""
         raise NotImplementedError('get_dataloader function not implemented for this validator')
 
-    def build_dataset(self, img_path):
+    def build_dataset(self, img_path_rgb, img_path_depth):
         """Build dataset."""
         raise NotImplementedError('build_dataset function not implemented in validator')
 

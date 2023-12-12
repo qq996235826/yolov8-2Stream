@@ -9,6 +9,11 @@ https://github.com/TUI-NICR/ESANet/blob/main/src/models/rgb_depth-fusion.py
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from torch.nn.modules.batchnorm import _BatchNorm
+import numpy as np
+from mmcv.cnn import (constant_init, kaiming_init, uniform_init)
+import os
+import cv2
 
 
 class SqueezeAndExcitation(nn.Module):
@@ -349,3 +354,87 @@ class MHAttentionFusionThird(nn.Module):
         output = self.vit_unflatten(output, query.shape)
         output = self.upsampler(output)
         return output
+
+
+class CrossModalMultiHeadAttention(nn.Module):
+    '''
+    来源于论文：RGB-D Grasp Detection via Depth Guided Learning with Cross-modal Attention
+    '''
+    def __init__(self,
+                 in_channels,
+                 num_head,
+                 ratio):
+        super(CrossModalMultiHeadAttention, self).__init__()
+        self.in_channels = in_channels
+        self.num_head = num_head
+        self.out_channels = int(in_channels * ratio)
+        self.query_conv = nn.Conv2d(in_channels, self.out_channels, kernel_size=1, stride=1, bias=True)
+        self.key_conv = nn.Conv2d(in_channels, self.out_channels, kernel_size=1, stride=1, bias=True)
+        self.value_conv = nn.Conv2d(in_channels, self.out_channels, kernel_size=1, stride=1, bias=True)
+        self.W = nn.Conv2d(in_channels=self.out_channels, out_channels=in_channels, kernel_size=1, stride=1, bias=True)
+        self.bn = nn.BatchNorm2d(in_channels)
+        self.fuse = nn.Sequential(
+            # nn.Conv2d(in_channels=in_channels * 2, out_channels=in_channels, kernel_size=3, stride=1, padding=1, bias=False),
+            # nn.ReLU(inplace=True),
+            # nn.Conv2d(in_channels, in_channels, kernel_size=1)
+            nn.Conv2d(in_channels=in_channels * 2, out_channels=in_channels, kernel_size=1, stride=1, bias=False)
+        )
+
+    def init_weights(self):
+        for m in self.modules():
+            if isinstance(m, nn.Conv2d):
+                kaiming_init(m)
+            elif isinstance(m, (_BatchNorm, nn.GroupNorm)):
+                constant_init(m, 1)
+
+    def forward(self, x, img_metas=None):
+        key=x[0]
+        query=x[1]
+        # key:RGB; query:Depth
+        batch, channels, height, width = query.size()
+        q_out = self.query_conv(query).contiguous().view(batch, self.num_head, -1, height, width)
+        k_out = self.key_conv(key).contiguous().view(batch, self.num_head, -1, height, width)
+        v_out = self.value_conv(query).contiguous().view(batch, self.num_head, -1, height, width)
+
+        att = (q_out * k_out).sum(dim=2) / np.sqrt(self.out_channels // self.num_head)
+
+        if self.num_head == 1:
+            softmax = att.unsqueeze(dim=2)
+            # softmax = torch.sigmoid(att).unsqueeze(dim=2)
+        else:
+            # softmax = F.softmax(att, dim=1).unsqueeze(dim=2)
+            softmax = torch.sigmoid(att).unsqueeze(dim=2)
+
+        weighted_value = v_out * softmax
+        # weighted_value = weighted_value.sum(dim=1)
+        weighted_value = weighted_value.view(batch, self.out_channels, height, width)
+        out = query + self.W(weighted_value)
+        # out = self.W(weighted_value)
+        out = self.bn(out)
+
+        debug = False
+        if debug and img_metas is not None:
+            dir = os.path.join('/home/qinran_2020/mmdetection_grasp/eval/cross_attention_sigmoid/attention')
+            scene_dir = os.path.join(dir, 'scene_%04d' % img_metas[0]['sceneId'])
+            if not os.path.exists(scene_dir):
+                os.makedirs(scene_dir)
+            img_name = os.path.join(scene_dir, '%04d' % img_metas[0]['annId'])
+
+            img = torch.sigmoid(att)[0][0].detach().cpu().numpy().astype(np.float32)
+            # img[img > 0.7] = 0.5
+            # img[img < -1] = 0
+            # img = np.mean(img, axis=0)
+            heatmap = None
+            heatmap = cv2.normalize(img, heatmap, alpha=0, beta=255, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_8U)
+            heatmap = cv2.applyColorMap(heatmap, cv2.COLORMAP_JET)
+            cv2.imwrite(img_name + "_attention.png", heatmap)
+
+            # channels = len(out[0])
+            # for i in range(channels):
+            #     img = out[0][i].detach().cpu().numpy().astype(np.float32)
+            #     heatmap = None
+            #     heatmap = cv2.normalize(img, heatmap, alpha=0, beta=255, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_8U)
+            #     heatmap = cv2.applyColorMap(heatmap, cv2.COLORMAP_JET)
+            #     cv2.imwrite(img_name + "_%d.png" % i, heatmap)
+
+        return self.fuse(torch.cat([key, out], dim=1))
