@@ -8,10 +8,10 @@ def depth_rendered(depth_path, color):
     # index = (im_depth == 65535)
     # im_depth[index] = 1200
 
-    index = (im_depth < 580)
-    im_depth[index] = 580
-    index = (im_depth > 770)
-    im_depth[index] = 770
+    # index = (im_depth < 580)
+    # im_depth[index] = 580
+    # index = (im_depth > 770)
+    # im_depth[index] = 770
     # 使用Matplotlib显示深度图像，以下设置可以将白边去除
     w = 640
     h = 480
@@ -28,4 +28,4 @@ def depth_rendered(depth_path, color):
 
 
 if __name__ == '__main__':
-    depth_rendered('../depth.png', 'viridis')
+    depth_rendered('../label/result_2018-08-27-15-58-44.png', 'viridis')

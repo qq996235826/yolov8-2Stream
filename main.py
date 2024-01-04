@@ -34,7 +34,7 @@ if __name__ == '__main__':
     opencv_cam.start()
 
     # 加载模型
-    model = YOLO("weight/best.pt")
+    model = YOLO("weight/best-FF.pt")
 
     # 拍照操作
     config.data['photo_flag'] = True
