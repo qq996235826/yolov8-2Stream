@@ -97,32 +97,32 @@ class Camera(threading.Thread):
         temp_filtered = filled_depth
         # 保存图片
         self.save_photo(color_image, filtered_depth_image)
-        if config.MODEL == 0:
-            # 从深度图获得点数据
-            self.pc.map_to(color_frame)
-            points = self.pc.calculate(temp_filtered)
-            # 保存本次拍摄的ply点云
-            points.export_to_ply(config.final_path + 'point_cloud.ply', color_frame)
-            # 获取深度图点云的顶点坐标
-            vtx = np.asanyarray(points.get_vertices())
-            # 获得彩色点
-            colorful = np.asanyarray(color_frame.get_data())
-            colorful = colorful.reshape(-1, 3)
-            # 写入point_cloud
-            point_cloud = []
-            index = 0
-            for p in vtx:
-                point_cloud.append(
-                    [p[0], p[1], p[2], colorful[index][0], colorful[index][1], colorful[index][2]])
-                index += 1
-            # 如果需要写入点云
-            if config.WRITER_BASE_CLOUD:
-                # 写入ply点云
-                points.export_to_ply(config.BASE_CLOUD_PATH, color_frame)
-            # 保存点云npy文件,这是后面点云处理要用到的数据
-            np.save(config.NPY_PATH, np.asarray(point_cloud))
-            # 保存历史纪录
-            # np.save(config.final_path + 'point_cloud.npy', point_cloud)
+
+        # 从深度图获得点数据
+        self.pc.map_to(color_frame)
+        points = self.pc.calculate(temp_filtered)
+        # 保存本次拍摄的ply点云
+        points.export_to_ply(config.final_path + 'point_cloud.ply', color_frame)
+        # 获取深度图点云的顶点坐标
+        vtx = np.asanyarray(points.get_vertices())
+        # 获得彩色点
+        colorful = np.asanyarray(color_frame.get_data())
+        colorful = colorful.reshape(-1, 3)
+        # 写入point_cloud
+        point_cloud = []
+        index = 0
+        for p in vtx:
+            point_cloud.append(
+                [p[0], p[1], p[2], colorful[index][0], colorful[index][1], colorful[index][2]])
+            index += 1
+        # 如果需要写入点云
+        if config.WRITER_BASE_CLOUD:
+            # 写入ply点云
+            points.export_to_ply(config.BASE_CLOUD_PATH, color_frame)
+        # 保存点云npy文件,这是后面点云处理要用到的数据
+        np.save(config.NPY_PATH, np.asarray(point_cloud))
+        # 保存历史纪录
+        # np.save(config.final_path + 'point_cloud.npy', point_cloud)
 
         # 着色滤波后的深度图
         colorized_depth = np.asanyarray(self.colorizer.colorize(temp_filtered).get_data())
@@ -204,11 +204,6 @@ class Camera(threading.Thread):
                     # 存完了10帧，停止拍照
                     config.data['photo_flag'] = False
                     self.take_photo(color_frame, color_image_bgr)
-                    # 线程调用
-                    # thread1 = threading.Thread(target=self.take_photo, args=(color_frame, color_image_bgr))
-                    # thread1.start()
-                    # 拍摄完成
-                    # config.data['photo_ready'] = True
                 # 把颜色图和深度图左右合在一起
                 images = np.hstack((color_image_bgr, depth_colormap))
                 # 显示图像

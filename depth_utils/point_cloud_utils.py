@@ -1,22 +1,19 @@
-import copy
 import numpy as np
 import open3d as o3d
-import matplotlib.pyplot as plt
 from catch.config import CAMERA_INTRINSIC
-from scipy.optimize import minimize
 import cv2
-from scipy.linalg import orthogonal_procrustes
+from scipy.optimize import minimize
 
 colorBar = [[95, 134, 112], [0, 1, 0], [184, 0, 0], [81, 45, 109],
             [0, 193, 212], [245, 230, 202], [251, 147, 0],
             [161, 196, 90], [161, 196, 90], [241, 197, 80], [247, 98, 98], [33, 101, 131], [101, 192, 186],
             [207, 253, 248], [132, 185, 239], [251, 228, 201], [255, 93, 93], [149, 46, 75]]
-"""
-    将txt转化成为ply点云文件
-"""
 
 
 def txt2ply(txtpath, plypath):
+    """
+        将txt转化成为ply点云文件
+    """
     ## 数据读取
     np.set_printoptions(suppress=True)  # 取消默认的科学计数法
     points = np.loadtxt(txtpath, dtype=float,
@@ -32,10 +29,10 @@ def txt2ply(txtpath, plypath):
     o3d.io.write_point_cloud(plypath, pcd)
 
 
-"""
-使用颜色和深度图获得ply点云
-"""
 def depth2ply(colorpath, depthpath, plypath, camera_intrinsic):
+    """
+    使用颜色和深度图获得ply点云
+    """
     depth = cv2.imread(depthpath, cv2.IMREAD_ANYDEPTH)
     rgb = cv2.imread(colorpath)
     rgb = cv2.cvtColor(rgb, cv2.COLOR_BGR2RGB)  # cv2默认为bgr顺序
@@ -56,63 +53,10 @@ def depth2ply(colorpath, depthpath, plypath, camera_intrinsic):
     return pcd
 
 
-# 定义最小化的目标函数
-def transformation_error(parameters, source, target):
-    # parameters 包含平移、旋转和缩放参数
-    translation = parameters[:3]
-    rotation_matrix = parameters[3:12].reshape((3, 3))
-    scale = parameters[12]
-
-    # 对原始点进行变换
-    transformed_source = scale * np.dot(source, rotation_matrix.T) + translation
-
-    # 计算变换后的点与目标点的误差
-    error = np.sum((transformed_source - target) ** 2)
-
-    return error
-
-
-def find_affine_transform(source_points, target_points):
-    """
-    寻找包含平移、旋转和缩放的非刚体变换的转换矩阵。
-
-    参数:
-    - A: 原始坐标 (numpy array)
-    - B: 目标坐标 (numpy array)
-
-    返回:
-    - translation: 平移向量
-    - rotation: 旋转矩阵
-    - scale: 缩放因子
-    """
-
-    # 初始参数猜测
-    initial_params = np.zeros(13)
-
-    # 最小化误差函数，得到最优参数
-    result = minimize(transformation_error, initial_params, args=(source_points, target_points), method='nelder-mead')
-
-    # 获取最优参数
-    optimized_params = result.x
-
-    # 提取平移、旋转和缩放参数
-    translation_optimized = optimized_params[:3]
-    rotation_matrix_optimized = optimized_params[3:12].reshape((3, 3))
-    scale_optimized = optimized_params[12]
-
-    # 打印结果
-    print("最优平移参数:", translation_optimized)
-    print("最优旋转矩阵:")
-    print(rotation_matrix_optimized)
-    print("最优缩放参数:", scale_optimized)
-
-    return translation_optimized, rotation_matrix_optimized, scale_optimized
-
-
-"""
-使用orb来获得两个图片之间的对应点
-"""
 def orb_keypoint(image1, image2, draw):
+    """
+    使用orb来获得两个图片之间的对应点
+    """
     # 使用SIFT算法检测关键点和计算描述符
     orb = cv2.ORB_create()
     keypoints1, descriptors1 = orb.detectAndCompute(image1, None)
@@ -159,11 +103,6 @@ def draw_keypoint(rgbimg, depthimg, keypoints):
     rgb_image = cv2.cvtColor(rgb_image, cv2.COLOR_BGR2RGB)  # cv2默认为bgr顺序
     depth_image = cv2.imread(depthimg, cv2.IMREAD_ANYDEPTH)
 
-    # 相机内参矩阵
-    camera_matrix = np.array([[609.919868760916, 0, 327.571937094492],
-                              [0, 607.733032143467, 241.738191162382],
-                              [0, 0, 1]])
-
     # 获取图像的高度和宽度
     height, width = depth_image.shape
 
@@ -181,7 +120,7 @@ def draw_keypoint(rgbimg, depthimg, keypoints):
                 continue
 
             # 反投影得到相机坐标系下的三维坐标
-            camera_coord = np.dot(np.linalg.inv(camera_matrix), np.array([u, v, 1]) * depth)
+            camera_coord = np.dot(np.linalg.inv(CAMERA_INTRINSIC), np.array([u, v, 1]) * depth)
 
             # 添加到点云
             points.append(camera_coord)
@@ -239,45 +178,6 @@ def draw_keypoint(rgbimg, depthimg, keypoints):
     vis.destroy_window()
 
 
-def get_3d_coordinates(u, v, depth, camera_matrix):
-    # 使用相机内参进行反投影
-    fx, fy, cx, cy = camera_matrix[0][0], camera_matrix[1][1], camera_matrix[0][2], camera_matrix[1][2]
-
-    x = (u - cx) * depth / fx
-    y = (v - cy) * depth / fy
-    z = depth
-
-    return x, y, z
-
-
-def depth_to_point_cloud(depth_image, rgb_image, camera_matrix):
-    points = []
-    colors = []
-
-    height, width = depth_image.shape
-
-    for v in range(height):
-        for u in range(width):
-            # 获取深度值
-            depth = depth_image[v, u]
-
-            # 跳过深度值为0的点
-            if depth == 0:
-                continue
-
-            # 反投影得到相机坐标系下的三维坐标
-            camera_coord = np.dot(np.linalg.inv(camera_matrix), np.array([u, v, 1]) * depth)
-
-            # 获取RGB颜色
-            rgb_color = rgb_image[v, u] / 255.0  # 归一化颜色到 [0, 1]
-
-            # 添加到点云
-            points.append(camera_coord)
-            colors.append(rgb_color)
-
-    return points, colors
-
-
 def get_point_from_pcd(points, pcd, plypath):
     point_array = np.asarray(pcd.points)
     point_array = point_array.reshape((480, 640, 3))
@@ -292,8 +192,9 @@ def get_point_from_pcd(points, pcd, plypath):
     point_cloud = o3d.geometry.PointCloud()
     point_cloud.points = o3d.utility.Vector3dVector(np.asarray(keypoint))
     point_cloud.colors = o3d.utility.Vector3dVector(np.asarray(color))
-    # 保存为PLY文件
-    o3d.io.write_point_cloud(plypath, point_cloud)
+    if plypath is not None:
+        # 保存为PLY文件
+        o3d.io.write_point_cloud(plypath, point_cloud)
     return keypoint
 
 
@@ -301,66 +202,121 @@ def get_point_from_pcd(points, pcd, plypath):
 def rigid_transform_3D(A, B):
     assert len(A) == len(B)
 
-    N = A.shape[0]  # total points
+    # 计算点云的质心
     centroid_A = np.mean(A, axis=0)
     centroid_B = np.mean(B, axis=0)
 
-    # centre the points
-    AA = A - np.tile(centroid_A, (N, 1))
-    BB = B - np.tile(centroid_B, (N, 1))
+    # 居中点云
+    AA = A - centroid_A
+    BB = B - centroid_B
 
-    H = np.matmul(np.transpose(AA), BB)
+    # 计算矩阵 H
+    H = np.dot(AA.T, BB)
+    # 进行奇异值分解
     U, S, Vt = np.linalg.svd(H)
     R = np.matmul(Vt.T, U.T)
 
-    # special reflection case
+    # 处理反射情况
     if np.linalg.det(R) < 0:
         print("Reflection detected")
         Vt[2, :] *= -1
         R = np.matmul(Vt.T, U.T)
 
-    t = -np.matmul(R, centroid_A) + centroid_B
+    # 计算平移矩阵 t
+    t = -np.dot(R, centroid_A) + centroid_B
+
     # err = B - np.matmul(A,R.T) - t.reshape([1, 3])
-    return R, t
+
+    # 定义目标函数，即欧氏距离的平方
+    def objective_function(scale):
+        transformed_A = scale * np.dot(R, A.T).T + t
+        return np.sum((B - transformed_A) ** 2)
+
+    # 使用最小二乘法估计缩放因子
+    result = minimize(objective_function, x0=1.0, bounds=[(0.1, 10.0)])
+    scale = result.x[0]
+    print('缩放:', scale)
+    print('旋转:', R)
+    print('平移:', t)
+    return scale * R, t
+
+
+def get_catch_point_and_vector(pcd, matrix):
+    """
+    :param pcd: 模型点云
+    :param matrix: 转换矩阵
+    :return: 抓取点和向量
+    """
+    # 初始抓取点与法向量,默认抓取点在中心，抓取方向垂直向下
+    catch_point = np.asarray([320, 240])
+    vector = np.asarray([0, 0, 1])
+
+    # 获得转换后的抓取点和法向量
+    catch_point = np.asarray(get_point_from_pcd([catch_point], pcd, None))
+    # 将三维点转换为齐次坐标
+    catch_point = np.concatenate([catch_point[0], [1]])
+    # 转换
+    catch_point = np.dot(matrix, catch_point)
+    # 将齐次坐标转换回三维坐标
+    catch_point = catch_point[:3]
+
+    # 转换法向量
+    vector = np.concatenate([vector, [0]])
+    # 进行变换
+    vector = np.dot(matrix, vector)
+    # 取变换后的齐次坐标的前三个分量，即为变换后的向量
+    vector = vector[:3]
+
+    return catch_point, vector
 
 
 if __name__ == '__main__':
-    # 分别读取RGB和深度图像
-    depht_1 = cv2.imread('depth-2.png', cv2.IMREAD_ANYDEPTH)
-    depht_2 = cv2.imread('depth.png', cv2.IMREAD_ANYDEPTH)
+    # 读取模板RGB和深度图
+    color_model = cv2.imread('color-2.png', cv2.IMREAD_ANYDEPTH)
+    color_model = cv2.cvtColor(color_model, cv2.COLOR_BGR2RGB)  # cv2默认为bgr顺序
+    depht_model = cv2.imread('depth-2.png', cv2.IMREAD_ANYDEPTH)
 
-    color_1 = cv2.imread('color-2.png', cv2.IMREAD_ANYDEPTH)
-    color_1 = cv2.cvtColor(color_1, cv2.COLOR_BGR2RGB)  # cv2默认为bgr顺序
-    color_2 = cv2.imread('color.png', cv2.IMREAD_ANYDEPTH)
-    color_2 = cv2.cvtColor(color_2, cv2.COLOR_BGR2RGB)  # cv2默认为bgr顺序
+    # 读取实拍RGB和深度图，RGB图像已经经过mask处理
+    color_real = cv2.imread('color.png', cv2.IMREAD_ANYDEPTH)
+    color_real = cv2.cvtColor(color_real, cv2.COLOR_BGR2RGB)  # cv2默认为bgr顺序
+    depht_real = cv2.imread('depth.png', cv2.IMREAD_ANYDEPTH)
 
     # sift匹配，返回的是两张图片中的对应点（二维）
-    points1, points2 = orb_keypoint(color_1, color_2, True)
+    points_model, points_real = orb_keypoint(color_model, color_real, True)
 
     # 根据RGB和DEPTH生成PLY点云
-    pcd_1 = depth2ply('color-2.png', 'depth-2.png', 'point_cloud/point_cloud_1.ply', CAMERA_INTRINSIC)
-    pcd_2 = depth2ply('color.png', 'depth.png', 'point_cloud/point_cloud_2.ply', CAMERA_INTRINSIC)
+    pcd_model = depth2ply('color-2.png', 'depth-2.png', 'point_cloud/point_cloud_model.ply', CAMERA_INTRINSIC)
+    pcd_real = depth2ply('color.png', 'depth.png', 'point_cloud/point_cloud_real.ply', CAMERA_INTRINSIC)
 
     # 根据二维坐标获得关键点以及其ply文件
-    pointset1 = np.asarray(get_point_from_pcd(points1, pcd_1, "point_cloud/keypoint_1.ply"))
-    pointset2 = np.asarray(get_point_from_pcd(points2, pcd_2, "point_cloud/keypoint_2.ply"))
-
-    # 把点转化为open3d格式
-    source_cloud = o3d.geometry.PointCloud()
-    source_cloud.points = o3d.utility.Vector3dVector(pointset1)
-    target_cloud = o3d.geometry.PointCloud()
-    target_cloud.points = o3d.utility.Vector3dVector(pointset2)
+    pointset_model = np.asarray(get_point_from_pcd(points_model, pcd_model, "point_cloud/keypoint_model.ply"))
+    pointset_real = np.asarray(get_point_from_pcd(points_real, pcd_real, "point_cloud/keypoint_real.ply"))
 
     # 计算旋转和平移
-    R, t = rigid_transform_3D(pointset1, pointset2)
-    print(R, t)
+    R, t = rigid_transform_3D(pointset_model, pointset_real)
+
+    # 构造转换矩阵，4*4齐次
     homogeneous_matrix = np.identity(4)
     homogeneous_matrix[:3, :3] = R
     homogeneous_matrix[:3, 3] = t
 
     # 获得源点云
-    source_cloud = o3d.io.read_point_cloud('point_cloud/point_cloud_1.ply')
+    source_cloud = o3d.io.read_point_cloud('point_cloud/point_cloud_face_model.ply')
     # 将源点云应用变换
     source_cloud.transform(homogeneous_matrix)
     # 变换后的点云保存为PLY文件
-    o3d.io.write_point_cloud('point_cloud/point_cloud_transfrom.ply', source_cloud)
+    o3d.io.write_point_cloud('point_cloud/point_cloud_transform.ply', source_cloud)
+
+    # 获得抓取点和抓取方向
+    catch_point, vector = get_catch_point_and_vector(pcd_model, homogeneous_matrix)
+    print('抓取点:', catch_point)
+    print('抓取向量:', vector)
+
+    # 获得抓取位置
+    # 获得源点云
+    source_cloud = o3d.io.read_point_cloud('point_cloud/catch.ply')
+    # 将源点云应用变换
+    source_cloud.transform(homogeneous_matrix)
+    # 变换后的点云保存为PLY文件
+    o3d.io.write_point_cloud('point_cloud/catch_transform.ply', source_cloud)
+

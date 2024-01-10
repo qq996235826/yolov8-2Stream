@@ -9,15 +9,15 @@ from catch import robotcontrol
 from queue import Queue
 
 if __name__ == '__main__':
-    # 初始化机械臂控制类
-    rob = robotcontrol.RobotControl()
-
-    print('\n')
-    # 机器臂复位
-    try:
-        rob.reset()
-    except:
-        print("机械臂移动失败")
+    # # 初始化机械臂控制类
+    # rob = robotcontrol.RobotControl()
+    #
+    # print('\n')
+    # # 机器臂复位
+    # try:
+    #     rob.reset()
+    # except:
+    #     print("机械臂移动失败")
 
     # 存储本次实验结果
     test_time = time.strftime('%Y-%m-%d-%H-%M-%S', time.localtime(time.time()))
@@ -58,9 +58,8 @@ if __name__ == '__main__':
                 # 新键下次实验的文件夹
                 config.final_path = config.test_path + config.test_time + '/' + str(config.count) + '/'
                 os.makedirs(config.final_path)
+                break
                 # 机械臂抓取
-                rob.catch(item)
+                # rob.catch(item)
             else:
                 break
-    # 关闭相机
-    # opencv_cam.flag = False

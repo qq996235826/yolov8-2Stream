@@ -439,12 +439,8 @@ def get_catch_point(results):
         print('抓取完毕，摄像头区域内已无目标')
         return None
 
-    if config.MODEL == 1:
-        # 从深度估计网络获得相机坐标系下的点云
-        camera_point_cloud = get_point_cloud(config.PREDICT_DEPTH_PATH, config.COLOR_PATH, config.CAMERA_INTRINSIC)
-    else:
-        # 使用双目相机的数据
-        camera_point_cloud = np.load(config.NPY_PATH)
+    # 使用双目相机的数据
+    camera_point_cloud = np.load(config.NPY_PATH)
 
     # masks_npy是一堆480*640的矩阵，每个矩阵对应一个物体的分割矩阵
     # 将图像分割成各个mask，存放在config.MASKS_COLOR_PATH
@@ -545,7 +541,7 @@ def get_catch_point(results):
     #                                               config.POINT_AREA)
 
     # 最小二乘拟合
-    # normal_vector = get_normal_vector(target_point_cloud)
+    normal_vector = get_normal_vector(target_point_cloud)
     # ransac平面拟合
     normal_vector = plane_fit(target_point_cloud)
     # print("原法向量:")

@@ -76,8 +76,6 @@ WRITER_CAMERA_CLOUD = True
 # WRITER_TARGET_CLOUD = False
 # WRITER_CAMERA_CLOUD = False
 
-# 1使用深度估计，0使用双目相机
-MODEL = 0
 
 # 创建字典用于存储全局数据,只会保留最新的彩色图像,深度图像和点云,以及识别结果
 # photo_flag:拍摄照片的标志,每次被设置成True都会拍一张照片
