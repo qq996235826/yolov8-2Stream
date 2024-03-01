@@ -23,9 +23,9 @@ def depth_rendered(depth_path, color):
     axes.imshow(im_depth, cmap=color)
     # 保存图片
     # plt.savefig(save_path + 'color-' +file, bbox_inches='tight', pad_inches=0)
-    plt.savefig('../depth_' + color + '.png', bbox_inches='tight', pad_inches=0)
+    plt.savefig(color + '.png', bbox_inches='tight', pad_inches=0)
     plt.close()
 
 
 if __name__ == '__main__':
-    depth_rendered('../label/result_2018-08-27-15-58-44.png', 'viridis')
+    depth_rendered('depth.png', 'viridis')

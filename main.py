@@ -2,7 +2,7 @@ import os
 import time
 from ultralytics import YOLO
 import cv2 as cv
-from catch import calculate_pose
+from catch import calculate_pose, get_pose
 from catch import config
 from catch import opencv_camera
 from catch import robotcontrol
@@ -51,15 +51,15 @@ if __name__ == '__main__':
             # 保存至历史
             cv.imwrite(config.final_path + "result.png", res_plotted)
             # 对照片进行处理并获得位姿信息
-            item = calculate_pose.get_catch_point(results)
+            # item = calculate_pose.get_catch_point(results)
+            item = get_pose.get_catch_pose_by_orb(results)
             if item is not None:
                 # 抓取计数+1
                 config.count += 1
                 # 新键下次实验的文件夹
                 config.final_path = config.test_path + config.test_time + '/' + str(config.count) + '/'
                 os.makedirs(config.final_path)
-                break
                 # 机械臂抓取
-                # rob.catch(item)
+                rob.catch(item)
             else:
                 break

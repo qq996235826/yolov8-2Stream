@@ -121,7 +121,6 @@ def pixel_to_world2(depth_path, x, y, camera2base, camera_matrix):
     return base[0:3].getA().tolist(), d
 
 
-
 def get_base_cloud_by_numba(point_cloud, camera2base):
     """获得拟合平面在机械臂坐标系下的点云,待优化,上面的版本想使用GPU加速"""
     base_point_cloud = []
@@ -299,7 +298,6 @@ def display_inlier_outlier(cloud, ind):
     inlier_cloud.paint_uniform_color([0.8, 0.8, 0.8])
     # 可视化
     o3d.visualization.draw_geometries([inlier_cloud, outlier_cloud])
-
 
 
 # 分割出每个面，把分割出来的彩色图像放入指定位置
@@ -510,7 +508,7 @@ def get_catch_point(results):
     print('***********************************************')
     print("目标点：")
     item.print_catch_info()
-    catch_img = cv.imread(config.PHOTO_PATH+"color.png")
+    catch_img = cv.imread(config.PHOTO_PATH + "color.png")
     catch_img = cv.circle(catch_img, (int(item.center_point[0]), int(item.center_point[1])), 10, (0, 0, 0), -1)
     # 保存抓取点图
     cv.imwrite(config.CATCH_IMG_PATH, catch_img)

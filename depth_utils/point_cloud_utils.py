@@ -53,7 +53,7 @@ def depth2ply(colorpath, depthpath, plypath, camera_intrinsic):
     return pcd
 
 
-def orb_keypoint(image1, image2, draw):
+def orb_keypoint(image1, image2, draw=False):
     """
     使用orb来获得两个图片之间的对应点
     """
@@ -270,6 +270,27 @@ def get_catch_point_and_vector(pcd, matrix):
     return catch_point, vector
 
 
+def get_catch_pose(classname, color_path, depth_path):
+    # 读取模板第一个面RGB和深度图
+    color_model_1 = cv2.imread('model/' + classname + '-1-color.png', cv2.IMREAD_ANYDEPTH)
+    color_model_1 = cv2.cvtColor(color_model_1, cv2.COLOR_BGR2RGB)  # cv2默认为bgr顺序
+    depht_model_1 = cv2.imread('model/' + classname + '-1-depth.png', cv2.IMREAD_ANYDEPTH)
+
+    # 读取模板第二个面RGB和深度图
+    color_model_2 = cv2.imread('model/' + classname + '-2-color.png', cv2.IMREAD_ANYDEPTH)
+    color_model_2 = cv2.cvtColor(color_model_2, cv2.COLOR_BGR2RGB)  # cv2默认为bgr顺序
+    depht_model_2 = cv2.imread('model/' + classname + '-2-depth.png', cv2.IMREAD_ANYDEPTH)
+
+    # 读取实拍RGB和深度图，RGB图像已经经过mask处理
+    color_real = cv2.imread(color_path, cv2.IMREAD_ANYDEPTH)
+    color_real = cv2.cvtColor(color_real, cv2.COLOR_BGR2RGB)  # cv2默认为bgr顺序
+    depht_real = cv2.imread(depth_path, cv2.IMREAD_ANYDEPTH)
+
+    # sift匹配，返回的是两张图片中的对应点（二维）
+    points_model_1, points_real_1 = orb_keypoint(color_model_1, color_real, True)
+    points_model_2, points_real_2 = orb_keypoint(color_model_2, color_real, True)
+
+
 if __name__ == '__main__':
     # 读取模板RGB和深度图
     color_model = cv2.imread('color-2.png', cv2.IMREAD_ANYDEPTH)
@@ -319,4 +340,3 @@ if __name__ == '__main__':
     source_cloud.transform(homogeneous_matrix)
     # 变换后的点云保存为PLY文件
     o3d.io.write_point_cloud('point_cloud/catch_transform.ply', source_cloud)
-
