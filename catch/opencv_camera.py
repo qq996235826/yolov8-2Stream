@@ -14,6 +14,8 @@ import numpy as np
 import cv2
 import matplotlib.pyplot as plt
 
+from depth_utils.depth_utils import depth_rendered
+
 
 class Camera(threading.Thread):
     def __init__(self, queue):
@@ -73,10 +75,11 @@ class Camera(threading.Thread):
         # 保存历史深度图片
         cv2.imwrite(config.final_path + name + "-depth.png", depth)
 
-        self.depth_rendered(depth)
+        # self.depth_rendered(depth)
+        depth_rendered(config.PHOTO_PATH + 'depth.png', 'viridis',config.PHOTO_PATH + 'viridis.png')
         # 图片进入队列
         self.queue.put(config.PHOTO_PATH + 'color.png')
-        self.queue.put(config.PHOTO_PATH + 'depth_viridis.png')
+        self.queue.put(config.PHOTO_PATH + 'viridis.png')
 
     # 负责对照片进行处理
     def take_photo(self, color_frame, color_image):

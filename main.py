@@ -1,5 +1,7 @@
 import os
 import time
+
+from depth_utils.depth_utils import depth_rendered
 from ultralytics import YOLO
 import cv2 as cv
 from catch import calculate_pose, get_pose
@@ -34,7 +36,7 @@ if __name__ == '__main__':
     opencv_cam.start()
 
     # 加载模型
-    model = YOLO("weight/best-FF.pt")
+    model = YOLO("weight/best-add-drgb.pt")
 
     # 拍照操作
     config.data['photo_flag'] = True
@@ -42,6 +44,8 @@ if __name__ == '__main__':
     while config.data['have_item']:
         # 如果拍照完成
         if q.full():
+            # 深度图着色
+            # depth_rendered('catch_result/photo/depth.png', 'viridis', 'catch_result/photo/viridis.png')
             # 预测
             results = model([q.get(), q.get()])
             # 保存结果图
@@ -51,8 +55,7 @@ if __name__ == '__main__':
             # 保存至历史
             cv.imwrite(config.final_path + "result.png", res_plotted)
             # 对照片进行处理并获得位姿信息
-            # item = calculate_pose.get_catch_point(results)
-            item = get_pose.get_catch_pose_by_orb(results)
+            item = get_pose.get_catch_pose_by_sift(results)
             if item is not None:
                 # 抓取计数+1
                 config.count += 1

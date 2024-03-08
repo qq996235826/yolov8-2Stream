@@ -3,13 +3,9 @@ import os
 import numpy
 import numpy as np
 import cv2 as cv
-import math
-from catch import matrix_util
 import open3d as o3d
 from catch import config
-import pyransac3d as pyrsc
 from catch import yolo_item
-from depth_utils import point_cloud_utils
 from catch.config import CAMERA_INTRINSIC
 from catch.config import CAMERA2BASE
 from scipy.optimize import minimize
@@ -69,12 +65,12 @@ def get_point_from_pcd(points, pcd, plypath):
     index = 0
     for point in points:
         keypoint.append(point_array[point[1]][point[0]])
-        color.append(np.asarray(colorBar[index]) / 255)
+        # color.append(np.asarray(colorBar[index]) / 255)
         index += 1
     # 将对应点写成PLY
     point_cloud = o3d.geometry.PointCloud()
     point_cloud.points = o3d.utility.Vector3dVector(np.asarray(keypoint))
-    point_cloud.colors = o3d.utility.Vector3dVector(np.asarray(color))
+    # point_cloud.colors = o3d.utility.Vector3dVector(np.asarray(color))
     if plypath is not None:
         # 保存为PLY文件
         o3d.io.write_point_cloud(plypath, point_cloud)
@@ -153,14 +149,14 @@ def rigid_transform_3D(A, B):
     return scale * R, t
 
 
-def orb_keypoint(image1, image2, draw=False):
+def sift_keypoint(image1, image2, draw=False):
     """
     使用orb来获得两个图片之间的对应点
     """
     # 使用SIFT算法检测关键点和计算描述符
-    orb = cv.ORB_create()
-    keypoints1, descriptors1 = orb.detectAndCompute(image1, None)
-    keypoints2, descriptors2 = orb.detectAndCompute(image2, None)
+    sift = cv.SIFT_create()
+    keypoints1, descriptors1 = sift.detectAndCompute(image1, None)
+    keypoints2, descriptors2 = sift.detectAndCompute(image2, None)
 
     # 使用BFMatcher（暴力匹配器）进行特征匹配
     bf = cv.BFMatcher()
@@ -173,7 +169,7 @@ def orb_keypoint(image1, image2, draw=False):
             good_matches.append(m)
 
     # 设置距离阈值，过滤不准确的匹配点
-    distance_threshold = 300
+    distance_threshold = 200
     filtered_matches = [m for m in good_matches if m.distance < distance_threshold]
 
     # 提取对应点的坐标
@@ -204,12 +200,12 @@ def get_key_points(color_real, class_name):
     :param class_name: 类名
     :return: 返回匹配点数量最多的平面的匹配点和模板名
     """
-    color_model_1 = cv.imread('catch_result/photo/model/' + class_name + '-1-color.png')
-    color_model_2 = cv.imread('catch_result/photo/model/' + class_name + '-2-color.png')
+    color_model_1 = cv.imread('catch_result/photo/model/' + class_name[:-2] + '/' + class_name + '-1-color.png')
+    color_model_2 = cv.imread('catch_result/photo/model/' + class_name[:-2] + '/' + class_name + '-2-color.png')
 
     # 获得二维匹配点
-    points_model_1, points_real_1 = orb_keypoint(color_model_1, color_real, True)
-    points_model_2, points_real_2 = orb_keypoint(color_model_2, color_real, True)
+    points_model_1, points_real_1 = sift_keypoint(color_model_1, color_real, True)
+    points_model_2, points_real_2 = sift_keypoint(color_model_2, color_real, True)
 
     if len(points_real_1) < 3 and len(points_real_2) < 3:
         raise ValueError('无法获得至少3个匹配点')
@@ -221,7 +217,7 @@ def get_key_points(color_real, class_name):
             return points_model_2, points_real_2, class_name + '-2'
 
 
-def get_catch_pose_by_orb(results):
+def get_catch_pose_by_sift(results):
     items = yolo_item.get_items(results)
     if len(items) == 0:
         config.data['have_item'] = False
@@ -245,8 +241,8 @@ def get_catch_pose_by_orb(results):
     points_model, points_real, model_name = get_key_points(color_real, best_item.name)
 
     # 根据RGB和DEPTH生成PLY点云
-    pcd_model = depth2ply('catch_result/photo/model/' + model_name + '-color.png',
-                          'catch_result/photo/model/nabati-1-2-depth.png',
+    pcd_model = depth2ply('catch_result/photo/model/' + model_name[:-4] + '/' + model_name + '-color.png',
+                          'catch_result/photo/model/' + model_name[:-4] + '/' + model_name + '-depth.png',
                           'catch_result/point_cloud/point_cloud_model.ply', CAMERA_INTRINSIC)
     pcd_real = depth2ply('catch_result/photo/color.png', 'catch_result/photo/depth.png',
                          'catch_result/point_cloud/point_cloud_real.ply', CAMERA_INTRINSIC)
@@ -284,3 +280,5 @@ def get_catch_pose_by_orb(results):
     vector = np.dot(vector, CAMERA2BASE)
     print('抓取点:', catch_point)
     print('抓取向量:', vector)
+    best_item.catch_pose = np.append(catch_point, vector)
+    return best_item

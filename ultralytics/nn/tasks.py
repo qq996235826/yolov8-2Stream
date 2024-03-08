@@ -66,7 +66,7 @@ class BaseModel(nn.Module):
             return self._predict_augment(x, x2)
         return self._predict_once(x, x2, profile, visualize)
 
-    def _predict_once(self, x, x2, profile=False, visualize=False):
+    def _predict_once(self, x2, x, profile=False, visualize=False):
         """
         Perform a forward pass through the network.
 
